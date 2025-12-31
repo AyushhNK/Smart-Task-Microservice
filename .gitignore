@@ -1,0 +1,94 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# =========================
+# Virtual Environments
+# =========================
+venv/
+env/
+.venv/
+ENV/
+
+# =========================
+# Django
+# =========================
+*.log
+local_settings.py
+db.sqlite3
+media/
+staticfiles/
+
+# Django migrations (keep in git usually)
+# migrations/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# IDEs & Editors
+# =========================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Testing & Coverage
+# =========================
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+nosetests.xml
+coverage.xml
+
+# =========================
+# Celery
+# =========================
+celerybeat-schedule
+celerybeat.pid
+
+# =========================
+# Docker
+# =========================
+*.pid
+docker-data/
+volumes/
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# Node (if frontend exists)
+# =========================
+node_modules/
+
+# =========================
+# Temporary / Backup
+# =========================
+*.swp
+*.bak
+*.tmp
