@@ -4,6 +4,7 @@ from rest_framework import permissions, status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from .models import Notification
 from .serializers import NotificationSerializer
+from .tasks import create_notification
 
 class NotificationListCreateAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -15,9 +16,8 @@ class NotificationListCreateAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        user_id = request.user.id
         serializer = NotificationSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user_id=user_id)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            create_notification.delay(request.user.id, serializer.validated_data["message"])
+            return Response({"detail": "Notification queued"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
