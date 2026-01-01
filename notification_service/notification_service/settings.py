@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hxwv(u$@uv)%vnx+9#czclkvbdlt3ome!(5)msz!5!y@fzmp$k'
+SECRET_KEY = 'django-insecure-%1x8i=nvmt$arzwgv@&++d9d+zw!g_$w#vokqxv+by&1_0!m(@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -37,6 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -115,3 +118,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTTokenUserAuthentication',
+    )
+}
+
+SIMPLE_JWT = {"SIGNING_KEY": "5ahp8kseKOVB_w"}
