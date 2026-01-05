@@ -5,6 +5,7 @@ from .models import Task
 from .serializers import TaskSerializer
 import requests
 import os
+from .kafka_producer import send_task_notification
 
 # URL of notification_service
 NOTIFICATION_SERVICE_URL = os.getenv(
@@ -40,6 +41,7 @@ class TaskListCreateAPIView(APIView):
                     print(f"Notification failed: {response.status_code} {response.text}")
             except Exception as e:
                 print(f"Error sending notification: {e}")
+            send_task_notification(task.title, request.user.id)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
