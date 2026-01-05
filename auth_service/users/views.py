@@ -5,6 +5,7 @@ from .serializers import RegisterSerializer, LoginSerializer
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
+from .services import validate_token
 
 # --------- Register View ---------
 class RegisterView(generics.CreateAPIView):
@@ -21,6 +22,16 @@ class RegisterView(generics.CreateAPIView):
 
 class LoginView(APIView):
     permission_classes = [AllowAny]
+    def get(self, request):
+        user=validate_token(request.headers.get("Authorization", "").split(" ")[1])
+        if user:
+            data = {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "is_active": user.is_active
+            }
+            return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
