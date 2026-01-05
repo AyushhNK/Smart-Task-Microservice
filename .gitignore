@@ -92,3 +92,6 @@ node_modules/
 *.swp
 *.bak
 *.tmp
+
+auth_pb2.py
+auth_pb2_grpc.py
