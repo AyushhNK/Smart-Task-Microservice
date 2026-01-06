@@ -6,15 +6,10 @@ from .serializers import TaskSerializer
 import requests
 import os
 from .kafka_producer import send_task_notification
-
-# URL of notification_service
-NOTIFICATION_SERVICE_URL = os.getenv(
-    "NOTIFICATION_SERVICE_URL", "http://127.0.0.1:8002/api/notifications/"
-)
+from .grpc_client import validate_user
 
 
 class TaskListCreateAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         tasks = Task.objects.filter(user_id=request.user.id)
@@ -22,31 +17,21 @@ class TaskListCreateAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        print(type(request.user))
-        print(request.user)
-        print(request.user.id)
-
+        token=request.headers.get("Authorization", "").split(" ")[1]
+        print( token)
+        user=validate_user(token)
+        print(user)
+        if not user.is_active:
+            return Response({"detail":"Invalid or inactive sssss."},status=status.HTTP_401_UNAUTHORIZED)
+        
         serializer = TaskSerializer(data=request.data)
         if serializer.is_valid():
-            task=serializer.save(user_id=request.user.id)
-            try:
-                headers = {
-                    "Authorization": f"Bearer {request.auth}",  # forward JWT
-                    "Content-Type": "application/json",
-                }
-                data = {"message": f"New task assigned: {task.title}","user_id": request.user.id}
-
-                response = requests.post(NOTIFICATION_SERVICE_URL, json=data, headers=headers)
-                if response.status_code not in [200, 201]:
-                    print(f"Notification failed: {response.status_code} {response.text}")
-            except Exception as e:
-                print(f"Error sending notification: {e}")
-            send_task_notification(task.title, request.user.id)
+            task=serializer.save(user_id=user.user_id)
+            send_task_notification(task.title, user.user_id,user.email)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class TaskDetailAPIView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self, task_id, user_id):
         return Task.objects.get(id=task_id, user_id=user_id)

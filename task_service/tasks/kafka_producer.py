@@ -11,10 +11,11 @@ def delivery_report(err, msg):
     else:
         print(f"Delivered {msg.value().decode('utf-8')}")
 
-def send_task_notification(task_title, user_id):
+def send_task_notification(task_title, user_id,user_email):
     notification = {
         'task_title': task_title,
-        'user_id': user_id
+        'user_id': user_id,
+        'user_email': user_email
     }
     value = json.dumps(notification).encode('utf-8')
 
