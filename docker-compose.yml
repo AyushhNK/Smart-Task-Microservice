@@ -1,56 +1,111 @@
 version: "3.9"
 
 services:
-  db:
+
+  # =========================
+  # DATABASE
+  # =========================
+  postgres:
     image: postgres:15
+    container_name: postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      POSTGRES_DB: smart_tasks
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
+  # =========================
+  # REDIS
+  # =========================
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  # =========================
+  # KAFKA (KRaft Mode)
+  # =========================
+  kafka:
+    image: bitnami/kafka:3.6
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ENABLE_KRAFT: yes
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_NODE_ID: 1
+      ALLOW_PLAINTEXT_LISTENER: yes
+
+  # =========================
+  # AUTH SERVICE (gRPC)
+  # =========================
   auth_service:
     build: ./auth_service
-    command: python manage.py runserver 0.0.0.0:8000
-    env_file:
-      - .env
-    ports:
-      - "8000:8000"
+    container_name: auth_service
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python -m auth_service.grpc_server
+      "
+    volumes:
+      - ./auth_service:/app
     depends_on:
-      - db
+      - postgres
+    ports:
+      - "50051:50051"
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/smart_tasks
 
+  # =========================
+  # TASK SERVICE (REST + gRPC client)
+  # =========================
   task_service:
     build: ./task_service
-    command: python manage.py runserver 0.0.0.0:8001
-    env_file:
-      - .env
-    ports:
-      - "8001:8001"
+    container_name: task_service
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    volumes:
+      - ./task_service:/app
     depends_on:
-      - db
+      - postgres
+      - kafka
+      - auth_service
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/smart_tasks
+      AUTH_GRPC_HOST: auth_service
+      AUTH_GRPC_PORT: 50051
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
+  # =========================
+  # NOTIFICATION SERVICE (Kafka Consumer)
+  # =========================
   notification_service:
     build: ./notification_service
-    command: python manage.py runserver 0.0.0.0:8002
-    env_file:
-      - .env
-    ports:
-      - "8002:8002"
+    container_name: notification_service
+    command: >
+      sh -c "
+      python manage.py kafka_consumer
+      "
+    volumes:
+      - ./notification_service:/app
     depends_on:
-      - db
-
-  project_service:
-    build: ./project_service
-    command: python manage.py runserver 0.0.0.0:8003
-    env_file:
-      - .env
-    ports:
-      - "8003:8003"
-    depends_on:
-      - db
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
 volumes:
   postgres_data:
