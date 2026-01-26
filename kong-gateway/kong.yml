@@ -1,0 +1,28 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: auth_service
+    url: http://host.docker.internal:5001
+    routes:
+      - name: auth_routes
+        paths:
+          - /auth
+        strip_path: true
+
+  - name: task_service
+    url: http://host.docker.internal:5002
+    routes:
+      - name: task_routes
+        paths:
+          - /tasks
+        strip_path: true
+    plugins:
+      - name: jwt
+
+consumers:
+  - username: django_user
+    jwt_secrets:
+      - key: django-key
+        secret: django-secret
+        algorithm: HS256
