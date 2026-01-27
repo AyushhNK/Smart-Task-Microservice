@@ -19,6 +19,15 @@ services:
         strip_path: true
     plugins:
       - name: jwt
+  -name: notification_service
+    url: http://host.docker.internal:5003
+    routes:
+      - name: notification_routes
+        paths:
+          - /notifications
+        strip_path: true
+    plugins:
+      - name: jwt
 
 consumers:
   - username: django_user
